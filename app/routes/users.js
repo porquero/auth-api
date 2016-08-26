@@ -10,6 +10,7 @@ var secretKey = require('../../config').secret;
 var mail = require('../helpers/mail').Mail;
 var User = require('../models/user');
 
+const filters = {password: 0,emailVerified: 0, verificationToken: 0};
 
 // route to show a random message (GET http://localhost:8080/api/)
 router.get('/', function(req, res) {
@@ -19,15 +20,8 @@ router.get('/', function(req, res) {
 });
 
 // route to return all users (GET http://localhost:8080/api/users)
-router.get('/user', validateToken, function(req, res) {
-    var user = req.decoded._doc;
-    var filters = {};
-
-    if (!user.admin) {
-        filters._id = user._id;
-    }
-    console.log(filters);
-    User.find(filters, function(err, users) {
+router.get('/user', function(req, res) {
+    User.find({}, filters, function(err, users) {
         res.json(users);
     });
 });
@@ -38,7 +32,7 @@ router.post('/user/login', function(req, res) {
     // find the user
     User.findOne({
         username: req.body.username
-    }, function(err, user) {
+    }, filters, function(err, user) {
 
         if (err) throw err;
 
@@ -61,7 +55,7 @@ router.post('/user/login', function(req, res) {
                 } else {
                     if (user.emailVerified) {
                         // if user is found and password is right
-                        // create a token        
+                        // create a token
                         var token = jwt.sign(user, secretKey, {
                             expiresIn: "1h"
                         });
@@ -126,7 +120,7 @@ router.put('/user/', validateToken, function(req, res) {
     var id = req.body._id;
     var user_post = new User(req.body);
 
-    var $match = {_id: id }    
+    var $match = {_id: id }
     User.update($match,{ $set : user_post } ,function(err, data){
         if(err){res.send(err)}
         res.status(200).json(data).end();
@@ -135,7 +129,6 @@ router.put('/user/', validateToken, function(req, res) {
 });
 
 router.get('/user/activation/:token', function(req, res) {
-    //TODO: activar cuenta con token
     User.findOne({
         verificationToken: req.params.token
     }, function(err, user) {
@@ -176,11 +169,11 @@ router.post('/user/recovery/', function(req, res) {
 router.get('/user/me', validateToken, function(req, res) {
     var user = req.decoded._doc;
 
-    var filters = {
+    var where = {
         _id: user._id
     };
 
-    User.find(filters, function(err, users) {
+    User.find(where, filters, function(err, users) {
         res.json(users);
     });
 });

@@ -51,8 +51,11 @@ var userSchema = new Schema({
         avatar: String,
         twitter: String,
         facebook: String,
+        linkedin: String,
         web: String
     },
+    skills:[String],
+    badges:[String],
     category: {
         level: String,
         points: Number
